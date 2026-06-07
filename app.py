@@ -48,7 +48,8 @@ _FONT      = "Arial"      if "Arial"      in pdfmetrics.getRegisteredFontNames()
 _FONT_BOLD = "Arial-Bold" if "Arial-Bold" in pdfmetrics.getRegisteredFontNames() else "Helvetica-Bold"
 
 # ── Ayarlar ──────────────────────────────────────────────────────────────────
-CHECKPOINT = r"C:\Users\fsemc\Desktop\Plant Disease Detection Project Final\Code\best_model_finetuned.pth"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+CHECKPOINT = os.path.join(BASE_DIR, "models", "best_model_finetuned.pth")
 IMG_SIZE   = 300
 DEVICE     = torch.device("cpu")
 
@@ -521,20 +522,21 @@ _gradcam = None
 
 def load_model():
     global _model, _classes, _gradcam
-    ckpt       = torch.load(CHECKPOINT, map_location=DEVICE, weights_only=False)
-    _classes   = ckpt["classes"]
+
+    ckpt = torch.load(CHECKPOINT, map_location="cpu")
+
+    _classes = ckpt["classes"]
     model_name = ckpt.get("model_name", "efficientnet_b4")
-    n          = len(_classes)
+    n = len(_classes)
 
-    m = timm.create_model(model_name, pretrained=False, drop_rate=0.0)
-    m.classifier = nn.Sequential(nn.Dropout(0.0),
-                                  nn.Linear(m.classifier.in_features, n))
+    m = timm.create_model(model_name, pretrained=False, num_classes=n)
     m.load_state_dict(ckpt["model"])
-    m = m.to(DEVICE).eval()
+    m = m.to("cpu").eval()
 
-    _model   = m
+    _model = m
     _gradcam = GradCAM(m)
-    print(f"✓ Model: {model_name} | {n} sınıf | {IMG_SIZE}px")
+
+    print(f"✓ Model loaded | {model_name} | {n} classes")
 
 # ── Yardımcılar ───────────────────────────────────────────────────────────────
 _tf = transforms.Compose([
