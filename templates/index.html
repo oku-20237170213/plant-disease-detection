@@ -1,0 +1,1345 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bitki Hastaligi Teshis Sistemi</title>
+  <style>
+    :root {
+      --green-dark:   #1b5e20;
+      --green-mid:    #2e7d32;
+      --green-light:  #43a047;
+      --green-accent: #66bb6a;
+      --green-pale:   #c8e6c9;
+      --bg-main:      #f4faf4;
+      --bg-card:      #ffffff;
+      --bg-card2:     #f0f9f0;
+      --bg-header:    #ffffff;
+      --border:       #d4ebd4;
+      --border-mid:   #b2dfb2;
+      --text-primary: #1a3320;
+      --text-muted:   #2e6b2e;
+      --text-dim:     #6a9b6a;
+      --shadow:       rgba(46,125,50,0.10);
+      --shadow-lg:    rgba(46,125,50,0.16);
+      --danger:       #e53935;
+      --warning:      #fb8c00;
+      --success:      #43a047;
+      --radius:       14px;
+      --radius-sm:    8px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg-main);
+      color: var(--text-primary);
+      min-height: 100vh;
+    }
+    /* HEADER */
+    header {
+      background: var(--bg-header);
+      border-bottom: 2px solid var(--green-pale);
+      padding: 16px 36px;
+      display: flex; align-items: center; gap: 16px;
+      box-shadow: 0 2px 12px var(--shadow);
+      position: sticky; top: 0; z-index: 100;
+    }
+    .logo-wrap {
+      width: 48px; height: 48px;
+      background: linear-gradient(135deg, var(--green-mid), var(--green-light));
+      border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px; box-shadow: 0 2px 8px var(--shadow-lg); flex-shrink: 0;
+    }
+    .header-text h1 { font-size: 1.35rem; font-weight: 700; color: var(--green-dark); }
+    .header-text p  { font-size: 0.78rem; color: var(--text-dim); margin-top: 2px; }
+    .header-badge {
+      margin-left: auto;
+      background: linear-gradient(135deg, var(--green-mid), var(--green-light));
+      color: #fff; font-size: 0.70rem; font-weight: 700;
+      padding: 5px 14px; border-radius: 20px; letter-spacing: 0.8px;
+      box-shadow: 0 2px 8px var(--shadow-lg);
+    }
+    /* LAYOUT */
+    .app-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 24px; max-width: 1380px; margin: 28px auto; padding: 0 24px;
+    }
+    @media (max-width: 900px) { .app-grid { grid-template-columns: 1fr; } }
+    /* CARD */
+    .card {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius); overflow: hidden; box-shadow: 0 2px 16px var(--shadow);
+    }
+    .card-header {
+      background: linear-gradient(135deg, var(--bg-card2), #e8f5e9);
+      padding: 14px 22px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 10px;
+      font-weight: 700; font-size: 0.88rem; color: var(--green-mid); letter-spacing: 0.2px;
+    }
+    .card-body { padding: 22px; }
+    /* TABS */
+    .tabs {
+      display: flex; gap: 6px; margin-bottom: 18px;
+      background: var(--bg-card2); padding: 5px;
+      border-radius: 10px; border: 1px solid var(--border);
+    }
+    .tab-btn {
+      flex: 1; padding: 10px 14px; border: none; border-radius: 7px;
+      background: transparent; color: var(--text-dim);
+      font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.2s;
+      display: flex; align-items: center; justify-content: center; gap: 7px;
+    }
+    .tab-btn.active {
+      background: #fff; color: var(--green-mid);
+      box-shadow: 0 1px 6px var(--shadow-lg); border: 1px solid var(--border-mid);
+    }
+    .tab-btn:hover:not(.active) { background: rgba(255,255,255,0.6); color: var(--text-muted); }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+    /* CAMERA */
+    .camera-container {
+      position: relative; border-radius: 10px; overflow: hidden;
+      background: #111; aspect-ratio: 4/3; border: 2px solid var(--border-mid);
+    }
+    #cameraFeed { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .camera-crosshair {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+      width: 76px; height: 76px; border: 2px solid rgba(102,187,106,0.75);
+      border-radius: 8px; pointer-events: none;
+    }
+    .camera-controls { display: flex; gap: 10px; margin-top: 12px; }
+    #cameraPlaceholder {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      aspect-ratio: 4/3; background: var(--bg-card2); border-radius: 10px;
+      border: 2px dashed var(--border-mid); color: var(--text-dim); gap: 10px; font-size: 0.86rem;
+    }
+    #cameraPlaceholder .cam-icon { font-size: 2.8rem; }
+    /* DROP ZONE */
+    .drop-zone {
+      border: 2px dashed var(--border-mid); border-radius: 10px;
+      padding: 40px 20px; text-align: center; cursor: pointer;
+      transition: all 0.2s; color: var(--text-dim); background: var(--bg-card2);
+    }
+    .drop-zone:hover, .drop-zone.drag-over {
+      border-color: var(--green-accent); background: #e8f5e9; color: var(--text-muted);
+    }
+    .drop-zone .dz-icon { font-size: 2.8rem; margin-bottom: 12px; }
+    .drop-zone p { font-size: 0.88rem; margin-bottom: 5px; font-weight: 500; }
+    .drop-zone span { font-size: 0.76rem; color: var(--text-dim); }
+    #fileInput { display: none; }
+    /* PREVIEW */
+    .preview-wrap {
+      position: relative; margin-top: 14px; border-radius: 10px;
+      overflow: hidden; display: none; border: 1px solid var(--border);
+    }
+    .preview-wrap.visible { display: block; }
+    #previewImg, #capturePreviewImg {
+      width: 100%; max-height: 260px; object-fit: contain; background: #f8f8f8; display: block;
+    }
+    .preview-close {
+      position: absolute; top: 8px; right: 8px;
+      background: rgba(255,255,255,0.9); border: 1px solid var(--border-mid);
+      color: var(--text-muted); border-radius: 50%;
+      width: 28px; height: 28px; cursor: pointer; font-size: 0.9rem;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 1px 4px var(--shadow);
+    }
+    /* BUTTONS */
+    .btn {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      padding: 11px 20px; border: none; border-radius: var(--radius-sm);
+      font-size: 0.87rem; font-weight: 600; cursor: pointer; transition: all 0.2s;
+      text-decoration: none; white-space: nowrap;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--green-mid), var(--green-light));
+      color: #fff; box-shadow: 0 2px 10px var(--shadow-lg);
+    }
+    .btn-primary:hover:not(:disabled) {
+      background: linear-gradient(135deg, var(--green-dark), var(--green-mid));
+      box-shadow: 0 4px 16px var(--shadow-lg); transform: translateY(-1px);
+    }
+    .btn-primary:disabled { opacity: 0.40; cursor: not-allowed; transform: none; }
+    .btn-secondary {
+      background: #fff; border: 1px solid var(--border-mid); color: var(--text-muted);
+    }
+    .btn-secondary:hover:not(:disabled) {
+      border-color: var(--green-accent); background: var(--bg-card2); color: var(--green-mid);
+    }
+    .btn-danger { background: #fff3f3; border: 1px solid #ffcdd2; color: var(--danger); }
+    .btn-danger:hover { background: #ffebee; }
+    .btn-pdf {
+      background: linear-gradient(135deg, #c62828, #e53935);
+      color: #fff; box-shadow: 0 2px 10px rgba(198,40,40,0.3);
+    }
+    .btn-pdf:hover:not(:disabled) { box-shadow: 0 4px 16px rgba(198,40,40,0.4); transform: translateY(-1px); }
+    .btn-pdf:disabled { opacity: 0.40; cursor: not-allowed; }
+    .btn-full { width: 100%; margin-top: 14px; }
+    .btn-sm { padding: 8px 14px; font-size: 0.81rem; }
+    /* SPINNER */
+    .spinner {
+      width: 18px; height: 18px;
+      border: 2px solid rgba(255,255,255,0.4); border-top-color: #fff;
+      border-radius: 50%; animation: spin 0.8s linear infinite; display: none;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    /* RESULTS */
+    #resultsPanel { display: none; }
+    #resultsPanel.visible { display: block; }
+    .no-result { text-align: center; padding: 55px 20px; color: var(--text-dim); }
+    .no-result .nr-icon { font-size: 3.5rem; margin-bottom: 14px; }
+    .no-result p { font-size: 0.86rem; line-height: 1.65; }
+    /* Disease header */
+    .disease-header {
+      background: linear-gradient(135deg, #e8f5e9, #f1f8e9);
+      border: 1px solid var(--border-mid); border-radius: 10px;
+      padding: 16px 18px; margin-bottom: 16px;
+      display: flex; align-items: flex-start; gap: 14px;
+    }
+    .disease-icon-wrap {
+      font-size: 2rem; width: 52px; height: 52px; background: #fff;
+      border: 1px solid var(--border-mid); border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; box-shadow: 0 1px 4px var(--shadow);
+    }
+    .disease-name  { font-size: 1.02rem; font-weight: 700; color: var(--text-primary); }
+    .disease-plant { font-size: 0.79rem; color: var(--text-dim); margin-top: 3px; }
+    .disease-category {
+      display: inline-block; font-size: 0.70rem; font-weight: 700;
+      padding: 3px 10px; border-radius: 20px; margin-top: 7px; letter-spacing: 0.4px;
+    }
+    .cat-disease { background: #ffebee; color: #c62828; border: 1px solid #ffcdd2; }
+    .cat-healthy { background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
+    /* Confidence */
+    .conf-section { margin-bottom: 16px; }
+    .conf-label { display: flex; justify-content: space-between; font-size: 0.79rem; color: var(--text-dim); margin-bottom: 7px; }
+    .conf-value { font-weight: 700; color: var(--text-primary); font-size: 1rem; }
+    .conf-bar-bg { height: 9px; background: var(--bg-card2); border-radius: 5px; overflow: hidden; border: 1px solid var(--border); }
+    .conf-bar-fill { height: 100%; border-radius: 5px; transition: width 0.9s ease; }
+    .conf-bar-fill.high   { background: linear-gradient(90deg, var(--green-mid), var(--green-accent)); }
+    .conf-bar-fill.medium { background: linear-gradient(90deg, #e65100, var(--warning)); }
+    .conf-bar-fill.low    { background: linear-gradient(90deg, #b71c1c, var(--danger)); }
+    /* Info blocks */
+    .info-block {
+      background: var(--bg-card2); border: 1px solid var(--border);
+      border-radius: 10px; padding: 14px 16px; margin-bottom: 12px;
+    }
+    .info-block-title {
+      font-size: 0.74rem; font-weight: 700; color: var(--green-mid);
+      text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .info-block-text { font-size: 0.84rem; color: var(--text-muted); line-height: 1.65; }
+    /* Image viewer */
+    .image-viewer { margin-bottom: 16px; }
+    .viewer-controls { display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; }
+    .view-btn {
+      padding: 7px 14px; border: 1px solid var(--border-mid); border-radius: 7px;
+      background: #fff; color: var(--text-dim); font-size: 0.78rem; font-weight: 600;
+      cursor: pointer; transition: all 0.18s;
+    }
+    .view-btn.active {
+      background: var(--green-mid); border-color: var(--green-mid);
+      color: #fff; box-shadow: 0 2px 6px var(--shadow-lg);
+    }
+    .view-btn:hover:not(.active) { border-color: var(--green-accent); color: var(--green-mid); background: var(--bg-card2); }
+    .image-display {
+      position: relative; border-radius: 10px; overflow: hidden;
+      background: #f0f0f0; min-height: 180px; border: 1px solid var(--border);
+    }
+    .image-display img { width: 100%; display: block; max-height: 280px; object-fit: contain; }
+    .img-label {
+      position: absolute; bottom: 8px; left: 8px;
+      background: rgba(255,255,255,0.92); color: var(--green-mid);
+      font-size: 0.70rem; font-weight: 700; padding: 3px 10px;
+      border-radius: 4px; border: 1px solid var(--border-mid);
+    }
+    /* Stats */
+    .stats-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 16px; }
+    .stat-box {
+      background: var(--bg-card2); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 10px; text-align: center;
+    }
+    .stat-val { font-size: 1.05rem; font-weight: 700; color: var(--text-primary); }
+    .stat-lbl { font-size: 0.68rem; color: var(--text-dim); margin-top: 2px; }
+    /* Top-5 table */
+    .top5-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+    .top5-table th {
+      text-align: left; padding: 8px 10px; color: var(--green-mid);
+      font-size: 0.73rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.5px; border-bottom: 2px solid var(--border-mid);
+    }
+    .top5-table td { padding: 9px 10px; border-bottom: 1px solid var(--border); color: var(--text-muted); vertical-align: middle; }
+    .top5-table tr:first-child td { color: var(--text-primary); font-weight: 600; }
+    .top5-table tr:last-child td  { border-bottom: none; }
+    .mini-bar-bg { height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; min-width: 60px; }
+    .mini-bar-fill { height: 100%; background: var(--green-accent); border-radius: 3px; }
+    .rank-badge { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; font-size: 0.70rem; font-weight: 700; }
+    .rank-1 { background: #fff8e1; color: #f9a825; border: 1px solid #ffe082; }
+    .rank-2 { background: #f5f5f5; color: #757575; border: 1px solid #e0e0e0; }
+    .rank-3 { background: #fbe9e7; color: #bf360c; border: 1px solid #ffccbc; }
+    .rank-n { background: var(--bg-card2); color: var(--text-dim); border: 1px solid var(--border); }
+    /* Action buttons */
+    .action-row { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+    .action-row .btn { flex: 1; min-width: 120px; }
+    /* Divider */
+    .divider { height: 1px; background: var(--border); margin: 16px 0; }
+    /* Toast */
+    #toast {
+      position: fixed; bottom: 28px; left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: #fff; border: 1px solid var(--border-mid);
+      color: var(--text-primary); padding: 12px 22px; border-radius: 10px;
+      font-size: 0.84rem; box-shadow: 0 8px 28px rgba(0,0,0,0.12);
+      z-index: 9999; transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+      display: flex; align-items: center; gap: 10px; white-space: nowrap;
+    }
+    #toast.show   { transform: translateX(-50%) translateY(0); }
+    #toast.error  { border-color: #ffcdd2; }
+    #toast.success{ border-color: var(--border-mid); }
+    /* Error box */
+    .error-box {
+      background: #ffebee; border: 1px solid #ffcdd2; border-radius: 8px;
+      padding: 14px; color: #c62828; font-size: 0.84rem;
+      display: flex; align-items: flex-start; gap: 10px;
+    }
+    /* Loader */
+    #analyzeLoader {
+      display: none; flex-direction: column; align-items: center;
+      justify-content: center; gap: 16px; padding: 55px 20px; text-align: center;
+    }
+    #analyzeLoader.visible { display: flex; }
+    .pulse-ring {
+      width: 58px; height: 58px; border: 4px solid var(--border-mid);
+      border-top-color: var(--green-mid); border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    #analyzeLoader p { color: var(--text-muted); font-size: 0.87rem; font-weight: 500; }
+    #analyzeLoader .sub { color: var(--text-dim); font-size: 0.76rem; margin-top: -10px; }
+
+    /* =====================================================================
+       TESHIS GECMISI
+    ===================================================================== */
+    .history-section { max-width: 1380px; margin: 0 auto 40px; padding: 0 24px; }
+    .history-header {
+      display: flex; align-items: center; gap: 12px;
+      background: #fff; border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 15px 22px;
+      cursor: pointer; user-select: none;
+      box-shadow: 0 2px 10px var(--shadow);
+      transition: background 0.18s, border-color 0.18s;
+    }
+    .history-header:hover { background: var(--bg-card2); border-color: var(--border-mid); }
+    .history-header.open  { border-radius: var(--radius) var(--radius) 0 0; }
+    .history-header-title {
+      font-size: 0.93rem; font-weight: 700; color: var(--green-mid);
+      flex: 1; display: flex; align-items: center; gap: 10px;
+    }
+    .history-count-badge {
+      background: var(--green-mid); color: #fff; font-size: 0.70rem;
+      font-weight: 700; padding: 2px 9px; border-radius: 20px;
+      min-width: 24px; text-align: center;
+    }
+    .history-toggle-icon { color: var(--text-dim); font-size: 0.8rem; transition: transform 0.25s; }
+    .history-toggle-icon.open { transform: rotate(180deg); }
+    .history-body {
+      background: #fff; border: 1px solid var(--border); border-top: none;
+      border-radius: 0 0 var(--radius) var(--radius); overflow: hidden;
+      box-shadow: 0 4px 18px var(--shadow); display: none;
+    }
+    .history-body.open { display: block; }
+    .history-toolbar {
+      display: flex; gap: 10px; padding: 14px 18px;
+      background: var(--bg-card2); border-bottom: 1px solid var(--border);
+      flex-wrap: wrap; align-items: center;
+    }
+    .history-search-wrap { flex: 1; min-width: 180px; position: relative; }
+    .history-search-wrap .search-icon {
+      position: absolute; left: 11px; top: 50%; transform: translateY(-50%);
+      font-size: 0.85rem; pointer-events: none;
+    }
+    .history-search {
+      width: 100%; padding: 9px 12px 9px 34px;
+      border: 1px solid var(--border-mid); border-radius: var(--radius-sm);
+      font-size: 0.83rem; color: var(--text-primary); background: #fff;
+      outline: none; transition: border-color 0.18s;
+    }
+    .history-search:focus { border-color: var(--green-accent); }
+    .history-filter {
+      padding: 9px 12px; border: 1px solid var(--border-mid);
+      border-radius: var(--radius-sm); font-size: 0.83rem;
+      color: var(--text-muted); background: #fff; outline: none;
+      cursor: pointer; min-width: 160px; transition: border-color 0.18s;
+    }
+    .history-filter:focus { border-color: var(--green-accent); }
+    .history-clear-btn {
+      padding: 9px 14px; border: 1px solid #ffcdd2;
+      border-radius: var(--radius-sm); background: #fff3f3; color: var(--danger);
+      font-size: 0.80rem; font-weight: 600; cursor: pointer; white-space: nowrap;
+      transition: background 0.18s; display: flex; align-items: center; gap: 6px;
+    }
+    .history-clear-btn:hover { background: #ffebee; }
+    .history-cards-wrap { padding: 18px; max-height: 640px; overflow-y: auto; }
+    .history-cards-wrap::-webkit-scrollbar { width: 6px; }
+    .history-cards-wrap::-webkit-scrollbar-track { background: var(--bg-card2); }
+    .history-cards-wrap::-webkit-scrollbar-thumb { background: var(--border-mid); border-radius: 3px; }
+    .history-empty { text-align: center; padding: 52px 20px; color: var(--text-dim); }
+    .history-empty .he-icon { font-size: 3.2rem; margin-bottom: 14px; }
+    .history-empty p { font-size: 0.84rem; line-height: 1.65; }
+    .history-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(300px,1fr)); gap: 14px;
+    }
+    @media (max-width: 680px) { .history-grid { grid-template-columns: 1fr; } }
+    /* History Card */
+    .hcard {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 12px; overflow: hidden; display: flex; flex-direction: column;
+      transition: box-shadow 0.2s, border-color 0.2s, transform 0.15s;
+    }
+    .hcard:hover { box-shadow: 0 6px 22px var(--shadow-lg); border-color: var(--border-mid); transform: translateY(-1px); }
+    .hcard-top { display: flex; gap: 12px; padding: 14px 14px 8px; }
+    .hcard-thumb {
+      width: 70px; height: 70px; border-radius: 8px; object-fit: cover;
+      border: 1px solid var(--border); flex-shrink: 0;
+      background: var(--bg-card2); cursor: pointer;
+    }
+    .hcard-thumb:hover { opacity: 0.88; }
+    .hcard-meta { flex: 1; min-width: 0; }
+    .hcard-disease {
+      font-size: 0.88rem; font-weight: 700; color: var(--text-primary);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 2px;
+    }
+    .hcard-plant { font-size: 0.74rem; color: var(--text-dim); margin-bottom: 7px; }
+    .hcard-badges { display: flex; gap: 5px; flex-wrap: wrap; align-items: center; }
+    .conf-badge { font-size: 0.70rem; font-weight: 700; padding: 2px 8px; border-radius: 20px; letter-spacing: 0.3px; }
+    .conf-high   { background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
+    .conf-medium { background: #fff8e1; color: #e65100; border: 1px solid #ffe082; }
+    .conf-low    { background: #ffebee; color: #c62828; border: 1px solid #ffcdd2; }
+    .status-badge { font-size: 0.68rem; font-weight: 700; padding: 2px 8px; border-radius: 20px; }
+    .sb-healthy { background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
+    .sb-disease { background: #ffebee; color: #c62828; border: 1px solid #ffcdd2; }
+    .hcard-date-row { padding: 0 14px 8px; font-size: 0.71rem; color: var(--text-dim); display: flex; align-items: center; gap: 8px; }
+    .hcard-filename { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px; font-style: italic; }
+    .hcard-top3 { display: flex; gap: 5px; flex-wrap: wrap; padding: 2px 14px 10px; }
+    .top3-chip {
+      font-size: 0.67rem; background: var(--bg-card2); border: 1px solid var(--border);
+      border-radius: 20px; padding: 2px 9px; color: var(--text-muted); white-space: nowrap;
+    }
+    .top3-chip.first { background: #e8f5e9; border-color: #c8e6c9; color: #2e7d32; font-weight: 700; }
+    .hcard-actions {
+      display: flex; gap: 6px; padding: 10px 12px 12px;
+      border-top: 1px solid var(--border); background: var(--bg-card2); margin-top: auto;
+    }
+    .hcard-btn {
+      flex: 1; padding: 7px 8px; border-radius: 7px; font-size: 0.73rem; font-weight: 600;
+      cursor: pointer; border: 1px solid var(--border-mid); background: #fff;
+      color: var(--text-muted); transition: all 0.18s; text-align: center;
+    }
+    .hcard-btn:hover:not(.pdf):not(.del) { border-color: var(--green-accent); color: var(--green-mid); }
+    .hcard-btn.pdf { border-color: #ffcdd2; color: #c62828; background: #fff3f3; }
+    .hcard-btn.pdf:hover { background: #ffebee; }
+    .hcard-btn.del { border-color: #ffcdd2; color: #c62828; background: #fff3f3; }
+    .hcard-btn.del:hover { background: #ffebee; }
+    /* Detail Modal */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.48);
+      z-index: 2000; display: flex; align-items: center; justify-content: center;
+      padding: 20px; backdrop-filter: blur(3px);
+      opacity: 0; pointer-events: none; transition: opacity 0.22s;
+    }
+    .modal-overlay.open { opacity: 1; pointer-events: all; }
+    .modal-box {
+      background: #fff; border-radius: var(--radius);
+      max-width: 780px; width: 100%; max-height: 90vh; overflow-y: auto;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.28);
+      transform: scale(0.93) translateY(24px);
+      transition: transform 0.28s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    .modal-overlay.open .modal-box { transform: scale(1) translateY(0); }
+    .modal-box::-webkit-scrollbar { width: 6px; }
+    .modal-box::-webkit-scrollbar-track { background: var(--bg-card2); }
+    .modal-box::-webkit-scrollbar-thumb { background: var(--border-mid); border-radius: 3px; }
+    .modal-header {
+      display: flex; align-items: center; gap: 12px;
+      padding: 18px 22px 16px; border-bottom: 1px solid var(--border);
+      background: linear-gradient(135deg, var(--bg-card2), #e8f5e9);
+      position: sticky; top: 0; z-index: 10;
+      border-radius: var(--radius) var(--radius) 0 0;
+    }
+    .modal-title { font-size: 0.98rem; font-weight: 700; color: var(--green-dark); flex: 1; }
+    .modal-close {
+      width: 32px; height: 32px; border-radius: 50%;
+      border: 1px solid var(--border-mid); background: #fff;
+      cursor: pointer; font-size: 0.9rem;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--text-muted); transition: all 0.18s;
+    }
+    .modal-close:hover { background: #ffebee; color: var(--danger); border-color: #ffcdd2; }
+    .modal-body { padding: 20px 22px 24px; }
+    .modal-meta-row {
+      display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+      margin-bottom: 16px; padding-bottom: 14px; border-bottom: 1px solid var(--border);
+    }
+    .modal-meta-item { font-size: 0.75rem; color: var(--text-dim); display: flex; align-items: center; gap: 4px; }
+    .modal-images { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+    @media (max-width: 560px) { .modal-images { grid-template-columns: 1fr; } }
+    .modal-img-wrap { border-radius: 10px; overflow: hidden; border: 1px solid var(--border); background: #f0f0f0; }
+    .modal-img-wrap img { width: 100%; display: block; max-height: 220px; object-fit: cover; }
+    .modal-img-label {
+      text-align: center; font-size: 0.71rem; color: var(--text-dim);
+      font-weight: 600; padding: 5px; background: var(--bg-card2); border-top: 1px solid var(--border);
+    }
+    .modal-info-block { background: var(--bg-card2); border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px; margin-bottom: 10px; }
+    .modal-info-title { font-size: 0.70rem; font-weight: 700; color: var(--green-mid); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+    .modal-info-text { font-size: 0.82rem; color: var(--text-muted); line-height: 1.65; }
+    .modal-top5-table { width: 100%; border-collapse: collapse; font-size: 0.80rem; margin-top: 6px; }
+    .modal-top5-table th { text-align: left; padding: 7px 9px; color: var(--green-mid); font-size: 0.71rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; border-bottom: 2px solid var(--border-mid); }
+    .modal-top5-table td { padding: 8px 9px; border-bottom: 1px solid var(--border); color: var(--text-muted); }
+    .modal-top5-table tr:first-child td { color: var(--text-primary); font-weight: 600; }
+    .modal-top5-table tr:last-child td  { border-bottom: none; }
+    .modal-actions { display: flex; gap: 10px; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--border); flex-wrap: wrap; }
+    .hcard.removing { animation: cardRemove 0.3s ease forwards; }
+    @keyframes cardRemove { to { opacity: 0; transform: scale(0.88); } }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo-wrap">&#127807;</div>
+  <div class="header-text">
+    <h1>Bitki Hastaligi Teshis Sistemi</h1>
+    <p>EfficientNet-B4 &nbsp;&#xB7;&nbsp; Grad-CAM &nbsp;&#xB7;&nbsp; 72 Hastalik Sinifi</p>
+  </div>
+  <div class="header-badge">YZ TABANLI</div>
+</header>
+
+<!-- MAIN GRID -->
+<div class="app-grid">
+
+  <!-- LEFT: INPUT -->
+  <div class="card">
+    <div class="card-header"><span>&#128248;</span> Goruntu Girisi</div>
+    <div class="card-body">
+
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('upload')" id="tab-upload">
+          &#128193; Galeriden Yukle
+        </button>
+        <button class="tab-btn" onclick="switchTab('camera')" id="tab-camera">
+          &#128247; Canli Kamera
+        </button>
+      </div>
+
+      <!-- UPLOAD TAB -->
+      <div class="tab-panel active" id="panel-upload">
+        <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+          <div class="dz-icon">&#128444;&#65039;</div>
+          <p>Fotografi buraya surukleyin veya tiklayin</p>
+          <span>JPG, PNG, WEBP &middot; Maks. 10 MB</span>
+        </div>
+        <input type="file" id="fileInput" accept="image/*" />
+        <div class="preview-wrap" id="previewWrap">
+          <img id="previewImg" alt="Onizleme" />
+          <button class="preview-close" onclick="clearImage()" title="Kaldir">&#x2715;</button>
+        </div>
+        <button class="btn btn-primary btn-full" id="analyzeUploadBtn" onclick="analyzeUpload()" disabled>
+          <span>&#128300; Teshis Baslat</span>
+          <div class="spinner" id="uploadSpinner"></div>
+        </button>
+      </div>
+
+      <!-- CAMERA TAB -->
+      <div class="tab-panel" id="panel-camera">
+        <div id="cameraPlaceholder">
+          <div class="cam-icon">&#128247;</div>
+          <p>Kamerayi baslatmak icin asagidaki butona tiklayin</p>
+        </div>
+        <div id="cameraActive" style="display:none;">
+          <div class="camera-container">
+            <video id="cameraFeed" autoplay playsinline muted></video>
+            <div class="camera-crosshair"></div>
+          </div>
+        </div>
+        <div class="camera-controls">
+          <button class="btn btn-secondary btn-sm" id="startCamBtn" onclick="startCamera()" style="flex:1;">
+            &#9654; Kamerayi Baslat
+          </button>
+          <button class="btn btn-danger btn-sm" id="stopCamBtn" onclick="stopCamera()" style="flex:1;display:none;">
+            &#9209; Kapat
+          </button>
+          <button class="btn btn-primary btn-sm" id="captureBtn" onclick="captureFrame()" style="flex:1;display:none;">
+            &#128248; Fotograf Cek
+          </button>
+        </div>
+        <div class="preview-wrap" id="capturePreviewWrap">
+          <img id="capturePreviewImg" alt="Cekilen Fotograf" />
+          <button class="preview-close" onclick="clearCapture()" title="Kaldir">&#x2715;</button>
+        </div>
+        <button class="btn btn-primary btn-full" id="analyzeCamBtn" onclick="analyzeCapture()" disabled>
+          <span>&#128300; Teshis Baslat</span>
+          <div class="spinner" id="camSpinner"></div>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- RIGHT: RESULTS -->
+  <div class="card">
+    <div class="card-header"><span>&#128300;</span> Teshis Sonuclari</div>
+    <div class="card-body">
+
+      <div id="emptyState">
+        <div class="no-result">
+          <div class="nr-icon">&#127807;</div>
+          <p>Teshis sonuclari burada gorunecek.<br/>Bir fotograf yukleyin veya kameradan cekin.</p>
+        </div>
+      </div>
+
+      <div id="analyzeLoader">
+        <div class="pulse-ring"></div>
+        <p>Bitki analiz ediliyor...</p>
+        <p class="sub">Model calisiyor, lutfen bekleyin</p>
+      </div>
+
+      <div id="resultsPanel">
+
+        <div class="disease-header">
+          <div class="disease-icon-wrap" id="diseaseIcon">&#127807;</div>
+          <div>
+            <div class="disease-name" id="diseaseName">&#8212;</div>
+            <div class="disease-plant" id="diseasePlant">&#8212;</div>
+            <div class="disease-category cat-disease" id="diseaseCategory">Hastalik</div>
+          </div>
+        </div>
+
+        <div class="conf-section">
+          <div class="conf-label">
+            <span>Guven Skoru</span>
+            <span class="conf-value" id="confText">0%</span>
+          </div>
+          <div class="conf-bar-bg">
+            <div class="conf-bar-fill" id="confBar" style="width:0%"></div>
+          </div>
+        </div>
+
+        <div class="stats-row">
+          <div class="stat-box"><div class="stat-val" id="statRank">#1</div><div class="stat-lbl">Siralama</div></div>
+          <div class="stat-box"><div class="stat-val">72</div><div class="stat-lbl">Toplam Sinif</div></div>
+          <div class="stat-box"><div class="stat-val" id="statTime">&#8212;</div><div class="stat-lbl">Sure (ms)</div></div>
+        </div>
+
+        <div class="image-viewer">
+          <div class="viewer-controls">
+            <button class="view-btn active" onclick="showView('original')" id="vbtn-original">&#128444;&#65039; Orijinal</button>
+            <button class="view-btn" onclick="showView('gradcam')"  id="vbtn-gradcam">&#127777;&#65039; Grad-CAM</button>
+            <button class="view-btn" onclick="showView('overlay')"  id="vbtn-overlay">&#128256; Isi Haritasi Ust Uste</button>
+          </div>
+          <div class="image-display">
+            <img id="viewerImg" src="" alt="Sonuc Gorseli" />
+            <div class="img-label" id="viewerLabel">Orijinal Goruntu</div>
+          </div>
+        </div>
+
+        <div class="info-block" id="infoBlock" style="display:none;">
+          <div class="info-block-title">&#128269; Hastalik Bilgisi</div>
+          <div class="info-block-text" id="diseaseInfo">&#8212;</div>
+        </div>
+
+        <div class="info-block" id="causeBlock" style="display:none;">
+          <div class="info-block-title">&#129516; Hastaligin Sebebi</div>
+          <div class="info-block-text" id="causeInfo">&#8212;</div>
+        </div>
+
+        <div class="info-block" id="preventBlock" style="display:none;">
+          <div class="info-block-title">&#128737;&#65039; Alinacak Onlemler</div>
+          <div class="info-block-text" id="preventInfo">&#8212;</div>
+        </div>
+
+        <div class="info-block" id="treatBlock" style="display:none;">
+          <div class="info-block-title">&#128138; Tedavi Onerisi</div>
+          <div class="info-block-text" id="treatInfo">&#8212;</div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="info-block">
+          <div class="info-block-title">&#128202; Ilk 5 Tahmin</div>
+          <table class="top5-table">
+            <thead>
+              <tr><th>#</th><th>Hastalik</th><th>Guven</th><th>Bar</th></tr>
+            </thead>
+            <tbody id="top5Body"></tbody>
+          </table>
+        </div>
+
+        <div class="action-row">
+          <button class="btn btn-secondary" onclick="newAnalysis()">&#128260; Yeni Teshis</button>
+          <button class="btn btn-pdf" id="pdfBtn" onclick="downloadPDF()">
+            &#128196; PDF Rapor
+            <div class="spinner" id="pdfSpinner"></div>
+          </button>
+        </div>
+
+      </div><!-- /resultsPanel -->
+    </div>
+  </div>
+
+</div><!-- /app-grid -->
+
+<!-- =========================================================
+     TESHIS GECMISI PANELI
+========================================================= -->
+<div class="history-section">
+
+  <div class="history-header" id="historyHeader" onclick="toggleHistory()">
+    <span style="font-size:1.1rem;">&#128194;</span>
+    <div class="history-header-title">
+      Teshis Gecmisi
+      <span class="history-count-badge" id="historyCountBadge">0</span>
+    </div>
+    <span class="history-toggle-icon" id="historyToggleIcon">&#9660;</span>
+  </div>
+
+  <div class="history-body" id="historyBody">
+
+    <div class="history-toolbar">
+      <div class="history-search-wrap">
+        <span class="search-icon">&#128269;</span>
+        <input type="text" class="history-search" id="historySearch"
+               placeholder="Hastalik veya bitki adi ara..."
+               oninput="filterHistory()" />
+      </div>
+      <select class="history-filter" id="historyFilter" onchange="filterHistory()">
+        <option value="">Tum Durumlar</option>
+        <option value="disease">Yalnizca Hastaliklar</option>
+        <option value="healthy">Yalnizca Saglikli</option>
+        <option value="high">Guven &ge; %80</option>
+        <option value="medium">Guven %50&#8211;80</option>
+        <option value="low">Guven &lt; %50</option>
+      </select>
+      <button class="history-clear-btn" onclick="confirmClearHistory()">&#128465;&#65039; Tumunu Temizle</button>
+    </div>
+
+    <div class="history-cards-wrap">
+      <div id="historyGrid" class="history-grid"></div>
+      <div id="historyEmpty" class="history-empty" style="display:none;">
+        <div class="he-icon">&#128203;</div>
+        <p>Henuz kayit yok.<br/>Bir fotograf analiz ettiginizde sonuclar otomatik kaydedilir.</p>
+      </div>
+      <div id="historyNoMatch" class="history-empty" style="display:none;">
+        <div class="he-icon">&#128270;</div>
+        <p>Arama kriterinize uygun kayit bulunamadi.</p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- =========================================================
+     DETAY MODALI
+========================================================= -->
+<div class="modal-overlay" id="detailModal" onclick="closeModal(event)">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span style="font-size:1.2rem;">&#128269;</span>
+      <div class="modal-title" id="modalTitle">Teshis Detayi</div>
+      <button class="modal-close" onclick="closeModalDirect()">&#x2715;</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-meta-row" id="modalMetaRow"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;" id="modalBadges"></div>
+      <div class="modal-images" id="modalImages"></div>
+      <div id="modalInfoBlocks"></div>
+      <div class="modal-info-block" id="modalTop5Wrap">
+        <div class="modal-info-title">&#128202; Ilk 5 Tahmin</div>
+        <table class="modal-top5-table">
+          <thead><tr><th>#</th><th>Hastalik</th><th>Bitki</th><th>Guven</th></tr></thead>
+          <tbody id="modalTop5Body"></tbody>
+        </table>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary btn-sm" onclick="closeModalDirect()">&#x2715; Kapat</button>
+        <button class="btn btn-pdf btn-sm" id="modalPdfBtn" onclick="downloadPDFFromModal()">
+          &#128196; PDF Rapor Indir
+          <div class="spinner" id="modalPdfSpinner"></div>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast">
+  <span id="toastIcon">&#8505;&#65039;</span>
+  <span id="toastMsg">Mesaj</span>
+</div>
+
+<script>
+let currentImageB64 = null;
+let currentResults  = null;
+let stream          = null;
+let capturedB64     = null;
+
+// TABS
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-'   + tab).classList.add('active');
+  document.getElementById('panel-' + tab).classList.add('active');
+  if (tab !== 'camera' && stream) stopCamera();
+}
+
+// DROP ZONE
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+dropZone.addEventListener('dragover',  e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault(); dropZone.classList.remove('drag-over');
+  if (e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', e => { if (e.target.files[0]) loadFile(e.target.files[0]); });
+
+function loadFile(file) {
+  if (!file.type.startsWith('image/')) { showToast('Lutfen bir goruntu dosyasi secin.', 'error'); return; }
+  if (file.size > 10*1024*1024) { showToast('Dosya boyutu 10 MB\'yi asiyor.', 'error'); return; }
+  const reader = new FileReader();
+  reader.onload = ev => {
+    currentImageB64 = ev.target.result;
+    document.getElementById('previewImg').src = currentImageB64;
+    document.getElementById('previewWrap').classList.add('visible');
+    document.getElementById('analyzeUploadBtn').disabled = false;
+  };
+  reader.readAsDataURL(file);
+}
+function clearImage() {
+  currentImageB64 = null; fileInput.value = '';
+  document.getElementById('previewImg').src = '';
+  document.getElementById('previewWrap').classList.remove('visible');
+  document.getElementById('analyzeUploadBtn').disabled = true;
+}
+
+// CAMERA
+async function startCamera() {
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+    document.getElementById('cameraFeed').srcObject = stream;
+    document.getElementById('cameraPlaceholder').style.display = 'none';
+    document.getElementById('cameraActive').style.display = 'block';
+    document.getElementById('startCamBtn').style.display = 'none';
+    document.getElementById('stopCamBtn').style.display = '';
+    document.getElementById('captureBtn').style.display = '';
+  } catch(e) { showToast('Kamera erisimi reddedildi: ' + e.message, 'error'); }
+}
+function stopCamera() {
+  if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+  document.getElementById('cameraPlaceholder').style.display = 'flex';
+  document.getElementById('cameraActive').style.display = 'none';
+  document.getElementById('startCamBtn').style.display = '';
+  document.getElementById('stopCamBtn').style.display = 'none';
+  document.getElementById('captureBtn').style.display = 'none';
+}
+function captureFrame() {
+  const video = document.getElementById('cameraFeed');
+  const canvas = document.createElement('canvas');
+  canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+  canvas.getContext('2d').drawImage(video, 0, 0);
+  capturedB64 = canvas.toDataURL('image/jpeg', 0.92);
+  document.getElementById('capturePreviewImg').src = capturedB64;
+  document.getElementById('capturePreviewWrap').classList.add('visible');
+  document.getElementById('analyzeCamBtn').disabled = false;
+  showToast('Fotograf cekildi!', 'success');
+}
+function clearCapture() {
+  capturedB64 = null;
+  document.getElementById('capturePreviewImg').src = '';
+  document.getElementById('capturePreviewWrap').classList.remove('visible');
+  document.getElementById('analyzeCamBtn').disabled = true;
+}
+
+// ANALYZE
+async function analyzeUpload()  { if (currentImageB64) await runAnalysis(currentImageB64, 'uploadSpinner', 'analyzeUploadBtn'); }
+async function analyzeCapture() { if (capturedB64)     await runAnalysis(capturedB64,     'camSpinner',    'analyzeCamBtn'); }
+
+async function runAnalysis(imageB64, spinnerId, btnId) {
+  const spinner = document.getElementById(spinnerId);
+  const btn     = document.getElementById(btnId);
+  btn.disabled = true; spinner.style.display = 'block';
+  showLoader();
+  const t0 = performance.now();
+  try {
+    const resp = await fetch('/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ image: imageB64.split(',')[1] })
+    });
+    if (!resp.ok) { const e = await resp.json().catch(() => ({})); throw new Error(e.error || resp.statusText); }
+    const data = await resp.json();
+    data._elapsed  = Math.round(performance.now() - t0);
+    data._inputB64 = imageB64;
+    currentResults = data;
+    renderResults(data);
+    showToast('Teshis tamamlandi!', 'success');
+    // Gecmise kaydet
+    const fname = (spinnerId === 'uploadSpinner' && fileInput?.files[0]?.name)
+                  ? fileInput.files[0].name : 'kamera-cekimi';
+    saveToHistory(data, fname);
+  } catch(e) {
+    showError('Analiz hatasi: ' + e.message);
+    showToast(e.message, 'error');
+  } finally {
+    spinner.style.display = 'none'; btn.disabled = false;
+  }
+}
+
+// RENDER
+function renderResults(data) {
+  hideLoader();
+  const top  = data.predictions[0];
+  const conf = (top.confidence * 100).toFixed(1);
+  const isHealthy = top.label.toLowerCase().includes('healthy') || top.label.includes('Saglikli');
+
+  document.getElementById('diseaseIcon').textContent  = isHealthy ? '✅' : '🍂';
+  document.getElementById('diseaseName').textContent  = top.name_tr  || top.label;
+  document.getElementById('diseasePlant').textContent = top.plant_tr ? '🌱 ' + top.plant_tr : '';
+
+  const catEl = document.getElementById('diseaseCategory');
+  catEl.textContent = isHealthy ? 'Saglikli Bitki' : 'Hastalik Tespit Edildi';
+  catEl.className   = 'disease-category ' + (isHealthy ? 'cat-healthy' : 'cat-disease');
+
+  document.getElementById('confText').textContent = conf + '%';
+  const fill = document.getElementById('confBar');
+  fill.style.width = conf + '%';
+  fill.className   = 'conf-bar-fill ' + (parseFloat(conf) >= 60 ? 'high' : parseFloat(conf) >= 30 ? 'medium' : 'low');
+
+  document.getElementById('statRank').textContent = '#1';
+  document.getElementById('statTime').textContent = data._elapsed || '—';
+
+  document.getElementById('viewerImg').src = data._inputB64;
+  document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('vbtn-original').classList.add('active');
+  document.getElementById('viewerLabel').textContent = 'Orijinal Goruntu';
+
+  window._gradcamB64 = data.gradcam_image ? 'data:image/jpeg;base64,' + data.gradcam_image : null;
+  window._overlayB64 = data.overlay_image ? 'data:image/jpeg;base64,' + data.overlay_image : null;
+
+  function fillInfoBlock(blockId, textId, value) {
+    const val = value && value !== '—' ? value : null;
+    document.getElementById(textId).textContent = val || '—';
+    document.getElementById(blockId).style.display = val ? 'block' : 'none';
+  }
+  fillInfoBlock('infoBlock',    'diseaseInfo', data.disease_info);
+  fillInfoBlock('causeBlock',   'causeInfo',   data.cause);
+  fillInfoBlock('preventBlock', 'preventInfo', data.prevention);
+  fillInfoBlock('treatBlock',   'treatInfo',   data.treatment);
+
+  const tbody = document.getElementById('top5Body');
+  tbody.innerHTML = '';
+  data.predictions.forEach((p, i) => {
+    const pct     = (p.confidence * 100).toFixed(1);
+    const rankCls = ['rank-1','rank-2','rank-3','rank-n','rank-n'][i] || 'rank-n';
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td><span class="rank-badge ${rankCls}">${i+1}</span></td>
+      <td>${p.name_tr || p.label}</td>
+      <td><strong>${pct}%</strong></td>
+      <td><div class="mini-bar-bg"><div class="mini-bar-fill" style="width:${pct}%"></div></div></td>`;
+    tbody.appendChild(tr);
+  });
+
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('resultsPanel').classList.add('visible');
+}
+
+// IMAGE VIEWER
+function showView(view) {
+  document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('vbtn-' + view).classList.add('active');
+  const img = document.getElementById('viewerImg');
+  const lbl = document.getElementById('viewerLabel');
+  if (view === 'original' && currentResults?._inputB64) {
+    img.src = currentResults._inputB64; lbl.textContent = 'Orijinal Goruntu';
+  } else if (view === 'gradcam' && window._gradcamB64) {
+    img.src = window._gradcamB64; lbl.textContent = 'Grad-CAM Isi Haritasi';
+  } else if (view === 'overlay' && window._overlayB64) {
+    img.src = window._overlayB64; lbl.textContent = 'Isi Haritasi Ust Uste';
+  } else { showToast('Bu gorunum henuz mevcut degil.', 'error'); }
+}
+
+// PDF (aktif analiz)
+async function downloadPDF() {
+  if (!currentResults) return;
+  await _downloadPDF(
+    currentResults._inputB64,
+    document.getElementById('pdfBtn'),
+    document.getElementById('pdfSpinner'),
+    'bitki_teshis_raporu.pdf'
+  );
+}
+
+// HELPERS
+function newAnalysis() {
+  currentResults = null; window._gradcamB64 = null; window._overlayB64 = null;
+  document.getElementById('resultsPanel').classList.remove('visible');
+  document.getElementById('emptyState').style.display = 'block';
+  document.getElementById('emptyState').innerHTML = `
+    <div class="no-result"><div class="nr-icon">🌱</div>
+    <p>Teshis sonuclari burada gorunecek.<br/>Bir fotograf yukleyin veya kameradan cekin.</p></div>`;
+  clearImage(); clearCapture(); switchTab('upload');
+}
+function showLoader() {
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('resultsPanel').classList.remove('visible');
+  document.getElementById('analyzeLoader').classList.add('visible');
+}
+function hideLoader() { document.getElementById('analyzeLoader').classList.remove('visible'); }
+function showError(msg) {
+  hideLoader();
+  document.getElementById('emptyState').style.display = 'block';
+  document.getElementById('emptyState').innerHTML = `<div class="error-box"><span>&#9888;&#65039;</span><span>${msg}</span></div>`;
+}
+
+/* =============================================================
+   TESHIS GECMISI MOTORU
+============================================================= */
+const HISTORY_KEY   = 'plantDiseaseHistory_v1';
+const HISTORY_LIMIT = 50;
+let _historyOpen  = false;
+let _modalRecord  = null;
+
+function loadHistoryRecords() {
+  try { return JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]'); }
+  catch(e) { return []; }
+}
+function saveHistoryRecords(records) {
+  try { localStorage.setItem(HISTORY_KEY, JSON.stringify(records)); return true; }
+  catch(e) { showToast('Depolama hatasi: alan dolu olabilir.', 'error'); return false; }
+}
+
+// Thumbnail 80x80
+function generateThumbnail(dataUrl) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => {
+      const c = document.createElement('canvas');
+      c.width = 80; c.height = 80;
+      const ctx = c.getContext('2d');
+      const s = Math.min(img.width, img.height);
+      ctx.drawImage(img, (img.width-s)/2, (img.height-s)/2, s, s, 0, 0, 80, 80);
+      resolve(c.toDataURL('image/jpeg', 0.72));
+    };
+    img.onerror = () => resolve('');
+    img.src = dataUrl;
+  });
+}
+
+// Compress 280x280 for storage / PDF
+function compressForStorage(dataUrl) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => {
+      const c = document.createElement('canvas');
+      c.width = 280; c.height = 280;
+      const ctx = c.getContext('2d');
+      const s = Math.min(img.width, img.height);
+      ctx.drawImage(img, (img.width-s)/2, (img.height-s)/2, s, s, 0, 0, 280, 280);
+      resolve(c.toDataURL('image/jpeg', 0.72));
+    };
+    img.onerror = () => resolve(dataUrl);
+    img.src = dataUrl;
+  });
+}
+
+// Save analysis to history
+async function saveToHistory(data, filename) {
+  const top1 = data.predictions[0];
+  const conf = parseFloat((top1.confidence * 100).toFixed(1));
+  const now  = new Date();
+  const pad  = n => String(n).padStart(2,'0');
+  const dateStr = `${pad(now.getDate())}.${pad(now.getMonth()+1)}.${now.getFullYear()}`;
+  const timeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+
+  const [thumbnail, storedImg] = await Promise.all([
+    generateThumbnail(data._inputB64),
+    compressForStorage(data._inputB64),
+  ]);
+
+  const record = {
+    id:             `${now.getTime()}_${Math.random().toString(36).slice(2,7)}`,
+    timestamp:      now.getTime(),
+    date:           dateStr,
+    time:           timeStr,
+    filename:       filename || 'bilinmiyor',
+    thumbnail,
+    storedImg,
+    plantName:      top1.plant_tr   || '—',
+    diseaseName:    top1.name_tr    || top1.label,
+    confidence:     conf,
+    severity:       data.siddet     || '—',
+    isHealthy:      data.saglikli   || false,
+    elapsed:        data._elapsed   || 0,
+    top3:           data.predictions.slice(0,3).map(p => ({
+                      name_tr:    p.name_tr    || p.label,
+                      plant_tr:   p.plant_tr   || '—',
+                      confidence: parseFloat((p.confidence * 100).toFixed(1)),
+                    })),
+    allPredictions: data.predictions,
+    diseaseInfo:    data.disease_info || '',
+    cause:          data.cause        || '',
+    prevention:     data.prevention   || '',
+    treatment:      data.treatment    || '',
+  };
+
+  const records = loadHistoryRecords();
+  records.unshift(record);
+  if (records.length > HISTORY_LIMIT) records.splice(HISTORY_LIMIT);
+  if (saveHistoryRecords(records)) {
+    if (_historyOpen) renderHistory(records);
+    updateHistoryBadge(records.length);
+  }
+}
+
+// Confidence badge class
+function confBadgeClass(conf) {
+  if (conf >= 80) return 'conf-high';
+  if (conf >= 50) return 'conf-medium';
+  return 'conf-low';
+}
+
+// Build one history card
+function buildHistoryCard(r) {
+  const bc = confBadgeClass(r.confidence);
+  const sc = r.isHealthy ? 'sb-healthy' : 'sb-disease';
+  const st = r.isHealthy ? '✅ Saglikli' : '🍂 Hastalik';
+  const chips = r.top3.map((p,i) =>
+    `<span class="top3-chip${i===0?' first':''}" title="${p.plant_tr}">${p.name_tr} ${p.confidence}%</span>`
+  ).join('');
+  const card = document.createElement('div');
+  card.className = 'hcard';
+  card.dataset.id = r.id;
+  card.innerHTML = `
+    <div class="hcard-top">
+      <img class="hcard-thumb" src="${r.thumbnail||''}" alt="Onizleme"
+           onclick="openDetail('${r.id}')" title="Detayi goruntule" />
+      <div class="hcard-meta">
+        <div class="hcard-disease" title="${r.diseaseName}">${r.diseaseName}</div>
+        <div class="hcard-plant">🌱 ${r.plantName}</div>
+        <div class="hcard-badges">
+          <span class="conf-badge ${bc}">%${r.confidence}</span>
+          <span class="status-badge ${sc}">${st}</span>
+        </div>
+      </div>
+    </div>
+    <div class="hcard-date-row">
+      <span>&#128336; ${r.date} ${r.time}</span>
+      <span class="hcard-filename" title="${r.filename}">📁 ${r.filename}</span>
+      ${r.elapsed ? `<span>&#9889; ${r.elapsed}ms</span>` : ''}
+    </div>
+    <div class="hcard-top3">${chips}</div>
+    <div class="hcard-actions">
+      <button class="hcard-btn" onclick="openDetail('${r.id}')">&#128269; Detay</button>
+      <button class="hcard-btn pdf" onclick="downloadPDFFromHistory('${r.id}')">&#128196; PDF</button>
+      <button class="hcard-btn del" onclick="deleteRecord('${r.id}')">&#128465;&#65039; Sil</button>
+    </div>`;
+  return card;
+}
+
+// Render/re-render history grid
+function renderHistory(records) {
+  records = records || loadHistoryRecords();
+  const grid    = document.getElementById('historyGrid');
+  const empty   = document.getElementById('historyEmpty');
+  const noMatch = document.getElementById('historyNoMatch');
+  grid.innerHTML = '';
+  if (records.length === 0) { empty.style.display = 'block'; noMatch.style.display = 'none'; return; }
+  empty.style.display = 'none';
+  const q   = (document.getElementById('historySearch')?.value || '').toLowerCase().trim();
+  const flt = document.getElementById('historyFilter')?.value || '';
+  const filtered = records.filter(r => {
+    if (q && !`${r.diseaseName} ${r.plantName} ${r.filename}`.toLowerCase().includes(q)) return false;
+    if (flt === 'disease') return !r.isHealthy;
+    if (flt === 'healthy') return  r.isHealthy;
+    if (flt === 'high')    return r.confidence >= 80;
+    if (flt === 'medium')  return r.confidence >= 50 && r.confidence < 80;
+    if (flt === 'low')     return r.confidence < 50;
+    return true;
+  });
+  if (filtered.length === 0) { noMatch.style.display = 'block'; return; }
+  noMatch.style.display = 'none';
+  filtered.forEach(r => grid.appendChild(buildHistoryCard(r)));
+}
+
+function updateHistoryBadge(count) {
+  const b = document.getElementById('historyCountBadge');
+  if (b) b.textContent = count !== undefined ? count : loadHistoryRecords().length;
+}
+function filterHistory() { renderHistory(); }
+
+function toggleHistory() {
+  _historyOpen = !_historyOpen;
+  document.getElementById('historyBody').classList.toggle('open', _historyOpen);
+  document.getElementById('historyToggleIcon').classList.toggle('open', _historyOpen);
+  document.getElementById('historyHeader').classList.toggle('open', _historyOpen);
+  if (_historyOpen) renderHistory();
+}
+
+function deleteRecord(id) {
+  const cardEl = document.querySelector(`.hcard[data-id="${id}"]`);
+  if (cardEl) {
+    cardEl.classList.add('removing');
+    setTimeout(() => {
+      const records = loadHistoryRecords().filter(r => r.id !== id);
+      saveHistoryRecords(records);
+      renderHistory(records);
+      updateHistoryBadge(records.length);
+      showToast('Kayit silindi.', 'success');
+    }, 300);
+  }
+}
+
+function confirmClearHistory() {
+  const n = loadHistoryRecords().length;
+  if (n === 0) { showToast('Gecmiste kayit bulunmuyor.', ''); return; }
+  if (!confirm(`Tum ${n} kayit silinsin mi? Bu islem geri alinamaz.`)) return;
+  saveHistoryRecords([]);
+  renderHistory([]);
+  updateHistoryBadge(0);
+  showToast('Tum gecmis temizlendi.', 'success');
+}
+
+// Open detail modal
+function openDetail(id) {
+  const r = loadHistoryRecords().find(rec => rec.id === id);
+  if (!r) return;
+  _modalRecord = r;
+  document.getElementById('modalTitle').textContent = `${r.diseaseName} — ${r.date} ${r.time}`;
+
+  document.getElementById('modalMetaRow').innerHTML = `
+    <span class="modal-meta-item">🌱 <strong>${r.plantName}</strong></span>
+    <span class="modal-meta-item">&#128336; ${r.date} ${r.time}</span>
+    <span class="modal-meta-item">📁 ${r.filename}</span>
+    ${r.elapsed ? `<span class="modal-meta-item">&#9889; ${r.elapsed} ms</span>` : ''}
+    ${r.severity && r.severity !== '—' ? `<span class="modal-meta-item">&#9888;&#65039; Siddet: ${r.severity}</span>` : ''}`;
+
+  const bc = confBadgeClass(r.confidence);
+  const sc = r.isHealthy ? 'sb-healthy' : 'sb-disease';
+  document.getElementById('modalBadges').innerHTML = `
+    <span class="conf-badge ${bc}">%${r.confidence} Guven</span>
+    <span class="status-badge ${sc}">${r.isHealthy ? '✅ Saglikli Bitki' : '🍂 Hastalik Tespit Edildi'}</span>`;
+
+  document.getElementById('modalImages').innerHTML = r.storedImg
+    ? `<div class="modal-img-wrap">
+         <img src="${r.storedImg}" alt="Orijinal" />
+         <div class="modal-img-label">Orijinal Goruntu</div>
+       </div>
+       <div class="modal-img-wrap" style="display:flex;align-items:center;justify-content:center;background:var(--bg-card2);min-height:120px;">
+         <div style="text-align:center;color:var(--text-dim);font-size:0.80rem;padding:20px;">
+           <div style="font-size:2rem;margin-bottom:8px;">&#127777;&#65039;</div>
+           Grad-CAM icin<br/>yeni analiz baslatabilirsiniz
+         </div>
+       </div>`
+    : '';
+
+  const sections = [
+    ['&#128269; Hastalik Bilgisi',      r.diseaseInfo],
+    ['🧬 Hastaligin Sebebi',  r.cause],
+    ['&#128737;&#65039; Alinacak Onlemler', r.prevention],
+    ['&#128138; Tedavi Onerisi',        r.treatment],
+  ];
+  document.getElementById('modalInfoBlocks').innerHTML = sections
+    .filter(([,v]) => v && v !== '—')
+    .map(([t,v]) => `
+      <div class="modal-info-block">
+        <div class="modal-info-title">${t}</div>
+        <div class="modal-info-text">${v}</div>
+      </div>`).join('');
+
+  const tbody = document.getElementById('modalTop5Body');
+  tbody.innerHTML = '';
+  (r.allPredictions || r.top3 || []).forEach((p, i) => {
+    const raw = p.confidence;
+    const pct = raw <= 1 ? (raw * 100).toFixed(1) : parseFloat(raw).toFixed(1);
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${i+1}</td><td>${p.name_tr||p.label||'—'}</td><td>${p.plant_tr||'—'}</td><td><strong>${pct}%</strong></td>`;
+    tbody.appendChild(tr);
+  });
+
+  document.getElementById('detailModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal(e) {
+  if (e.target === document.getElementById('detailModal')) closeModalDirect();
+}
+function closeModalDirect() {
+  document.getElementById('detailModal').classList.remove('open');
+  document.body.style.overflow = '';
+  _modalRecord = null;
+}
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && _modalRecord) closeModalDirect();
+});
+
+// PDF from modal
+async function downloadPDFFromModal() {
+  if (!_modalRecord?.storedImg) { showToast('Goruntu verisi bulunamadi.', 'error'); return; }
+  await _downloadPDF(
+    _modalRecord.storedImg,
+    document.getElementById('modalPdfBtn'),
+    document.getElementById('modalPdfSpinner'),
+    `teshis_${_modalRecord.date.replace(/\./g,'')}_${_modalRecord.time.replace(/:/g,'')}.pdf`
+  );
+}
+
+// PDF from history card
+async function downloadPDFFromHistory(id) {
+  const r = loadHistoryRecords().find(rec => rec.id === id);
+  if (!r?.storedImg) { showToast('Goruntu verisi bulunamadi.', 'error'); return; }
+  const cardEl = document.querySelector(`.hcard[data-id="${id}"] .hcard-btn.pdf`);
+  if (cardEl) { cardEl.disabled = true; cardEl.textContent = '&#9203; ...'; }
+  try {
+    await _downloadPDF(r.storedImg, null, null,
+      `teshis_${r.date.replace(/\./g,'')}_${r.time.replace(/:/g,'')}.pdf`);
+  } finally {
+    if (cardEl) { cardEl.disabled = false; cardEl.textContent = 'PDF'; }
+  }
+}
+async function _downloadPDF(imageDataUrl, btn, spinner, filename) {
+  if (btn) btn.disabled = true;
+  if (spinner) spinner.style.display = 'block';
+  showToast('PDF olusturuluyor...', '');
+  try {
+    const b64 = imageDataUrl.includes(',') ? imageDataUrl.split(',')[1] : imageDataUrl;
+    const resp = await fetch('/pdf', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({image: b64})
+    });
+    if (!resp.ok) throw new Error('PDF olusturulamadi');
+    const blob = await resp.blob();
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = filename || 'bitki_teshis.pdf'; a.click();
+    URL.revokeObjectURL(url);
+    showToast('PDF indirildi!', 'success');
+  } catch(e) { showToast(e.message, 'error'); }
+  finally {
+    if (btn) btn.disabled = false;
+    if (spinner) spinner.style.display = 'none';
+  }
+}
+document.addEventListener('DOMContentLoaded', () => { updateHistoryBadge(); });
+let _toastTimer = null;
+function showToast(msg, type) {
+  const el   = document.getElementById('toast');
+  const icons = {success:'OK', error:'XX', '':'...'};
+  document.getElementById('toastIcon').textContent = icons[type] ?? 'i';
+  document.getElementById('toastMsg').textContent  = msg;
+  el.className = 'show ' + (type || '');
+  if (_toastTimer) clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => el.classList.remove('show'), 3500);
+}
+</script>
+</body>
+</html>
